@@ -146,6 +146,65 @@ Response: 200 or 204
 - Custom MCP connectors (any remote MCP server URL)
 - File connectors (local file path monitoring with wildcards)
 
+## Integrations API (Connector CRUD)
+
+Base: `https://agent.ai.edgedelta.com/v1/orgs/{org_id}`
+
+**Note**: This is NOT the same as `GET /ai/connectors` on `api.edgedelta.com`.
+Integrations are managed via the **agent.ai** domain with JWT auth.
+
+### List Integrations
+```
+GET /integrations?visibleFields=
+Response: {"data": [<integration>, ...]}
+```
+
+### Create Integration
+```
+POST /integrations
+Body: {
+    "type": "custom-mcp",
+    "name": "my-custom-mcp",
+    "displayName": "My Custom MCP Server",
+    "isLegacy": false,
+    "authenticationData": {
+        "authType": "none",
+        "serverUrl": "https://my-mcp-server.example.com/sse"
+    }
+}
+Response: 201 {"data": <integration>}
+```
+
+Auth types: `none`, `token` (Bearer), `oAuth` (clientId + clientSecret)
+
+### Delete Integration
+```
+DELETE /integrations/{name}
+Response: 200
+```
+
+### Integration Object Fields
+```json
+{
+    "pk": "org#<org_id>",
+    "sk": "integration#<name>",
+    "organizationId": "<org_id>",
+    "type": "custom-mcp",
+    "name": "my-custom-mcp",
+    "displayName": "My Custom MCP Server",
+    "isAuthenticated": true,
+    "creator": "user@example.com",
+    "createdAt": "2026-02-14T...",
+    "eventConnectorConnectionStatus": "connected|connection-failed"
+}
+```
+
+### 15 MCP-Tagged Connector Types
+These can be assigned to agents as tool connectors:
+`atlassian`, `aws`, `circleci`, `custom-mcp`, `databricks`, `edgedelta-mcp`,
+`elastic-mcp`, `github`, `gitlab`, `jenkins`, `linear`, `microsoft-teams`,
+`pagerduty`, `sentry`, `slack`
+
 ## Chat API
 
 Base: `https://chat.ai.edgedelta.com/v1/orgs/{org_id}`

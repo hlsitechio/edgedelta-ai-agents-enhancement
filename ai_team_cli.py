@@ -15,6 +15,10 @@ Commands:
     agent-tools <id>    Show MCP tools assigned to an agent
     clone-agent <id>    Clone an existing agent with a new name
 
+    integrations        List all integrations (connectors)
+    create-integration  Create a new integration/connector
+    delete-integration  Delete an integration
+
     channels            List all channels
     channel <id>        Show channel details
 
@@ -541,6 +545,61 @@ def cmd_connectors(args):
     print()
 
 
+def cmd_integrations(args):
+    """List all integrations."""
+    client = get_client(args)
+    integrations = client.list_integrations()
+    print(f"\n{'='*80}")
+    print(f"Integrations ({len(integrations)} total)")
+    print(f"{'='*80}")
+    for i in integrations:
+        name = i.get("name", "unknown")
+        display = i.get("displayName", "")
+        itype = i.get("type", "unknown")
+        status = i.get("eventConnectorConnectionStatus", "unknown")
+        creator = i.get("creator", "")
+        label = f"{display} ({name})" if display and display != name else name
+        print(f"  [{itype:<15}] {label:<40} status: {status}")
+        if creator:
+            print(f"{'':>20} created by: {creator}")
+    print()
+
+
+def cmd_create_integration(args):
+    """Create a new integration/connector."""
+    client = get_client(args)
+    auth_data = {"authType": args.auth_type}
+    if args.server_url:
+        auth_data["serverUrl"] = args.server_url
+    if args.token:
+        auth_data["token"] = args.token
+
+    print(f"Creating integration '{args.name}' (type={args.connector_type})...")
+    result = client.create_integration(
+        connector_type=args.connector_type,
+        name=args.name,
+        display_name=args.display_name or args.name,
+        auth_data=auth_data,
+    )
+    print(f"\nIntegration created!")
+    print(f"  Name: {result.get('name', args.name)}")
+    print(f"  Type: {result.get('type', args.connector_type)}")
+    print(f"  Display: {result.get('displayName', '')}")
+    print(f"\nAdd to agent: python ai_team_cli.py update-agent <agent_id> --connectors edgedelta-mcp,edgedelta-documentation,{args.name}")
+
+
+def cmd_delete_integration(args):
+    """Delete an integration."""
+    client = get_client(args)
+    if not args.force:
+        confirm = input(f"Delete integration '{args.name}'? (y/N): ")
+        if confirm.lower() != "y":
+            print("Cancelled.")
+            return
+    success = client.delete_integration(args.name)
+    print(f"{'Deleted' if success else 'Failed to delete'} integration '{args.name}'")
+
+
 # ── Main ─────────────────────────────────────────────────────
 
 def main():
@@ -658,6 +717,23 @@ def main():
     # connectors
     subparsers.add_parser("connectors", help="List available connectors")
 
+    # integrations
+    subparsers.add_parser("integrations", help="List all integrations")
+
+    # create-integration
+    p_create_int = subparsers.add_parser("create-integration", help="Create a new integration/connector")
+    p_create_int.add_argument("connector_type", help="Connector type (custom-mcp, slack, sentry, etc.)")
+    p_create_int.add_argument("name", help="Unique integration name")
+    p_create_int.add_argument("--display-name", help="Human-readable display name")
+    p_create_int.add_argument("--server-url", help="MCP server URL (for custom-mcp)")
+    p_create_int.add_argument("--auth-type", default="none", choices=["none", "token", "oAuth"], help="Authentication type")
+    p_create_int.add_argument("--token", help="Bearer token (when auth-type is token)")
+
+    # delete-integration
+    p_del_int = subparsers.add_parser("delete-integration", help="Delete an integration")
+    p_del_int.add_argument("name", help="Integration name to delete")
+    p_del_int.add_argument("--force", action="store_true", help="Skip confirmation")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -680,6 +756,9 @@ def main():
         "activity": cmd_activity,
         "models": cmd_models,
         "connectors": cmd_connectors,
+        "integrations": cmd_integrations,
+        "create-integration": cmd_create_integration,
+        "delete-integration": cmd_delete_integration,
         "agent-tools": cmd_agent_tools,
         "clone-agent": cmd_clone_agent,
         "search-threads": cmd_search_threads,

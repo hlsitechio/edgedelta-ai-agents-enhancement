@@ -334,7 +334,7 @@ class AITeamClient:
         resp.raise_for_status()
         return resp.json().get("models", [])
 
-    # ── Connectors ──────────────────────────────────────────
+    # ── Connectors / Integrations ────────────────────────────
 
     def list_connectors(self, api_token: str = None) -> list:
         """List AI connectors. Requires API token auth."""
@@ -345,6 +345,59 @@ class AITeamClient:
         )
         resp.raise_for_status()
         return resp.json()
+
+    def list_integrations(self) -> list:
+        """List all integrations (connectors) via the agent API."""
+        resp = requests.get(
+            self._agent_url("/integrations?visibleFields="),
+            headers=self.headers,
+        )
+        resp.raise_for_status()
+        return resp.json().get("data", [])
+
+    def create_integration(
+        self,
+        connector_type: str,
+        name: str,
+        display_name: str = "",
+        auth_data: dict = None,
+    ) -> dict:
+        """Create a new connector/integration.
+
+        Args:
+            connector_type: Connector spec type (e.g. 'custom-mcp', 'slack', 'sentry')
+            name: Unique integration name (e.g. 'my-custom-mcp')
+            display_name: Human-readable name
+            auth_data: Authentication config. For custom-mcp:
+                        {"authType": "none", "serverUrl": "https://..."}
+                        For token auth:
+                        {"authType": "token", "serverUrl": "https://...", "token": "..."}
+
+        Returns:
+            Created integration dict
+        """
+        payload = {
+            "type": connector_type,
+            "name": name,
+            "displayName": display_name or name,
+            "isLegacy": False,
+            "authenticationData": auth_data or {},
+        }
+        resp = requests.post(
+            self._agent_url("/integrations"),
+            headers=self.headers,
+            json=payload,
+        )
+        resp.raise_for_status()
+        return resp.json().get("data", {})
+
+    def delete_integration(self, name: str) -> bool:
+        """Delete a connector/integration by name."""
+        resp = requests.delete(
+            self._agent_url(f"/integrations/{name}"),
+            headers=self.headers,
+        )
+        return resp.status_code in (200, 204)
 
     # ── Agent Tools ─────────────────────────────────────────
 

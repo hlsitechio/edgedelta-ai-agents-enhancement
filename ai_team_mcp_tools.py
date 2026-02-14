@@ -296,6 +296,66 @@ AI_TEAM_TOOLS = [
             "required": [],
         },
     },
+    # ── Integrations (Connector CRUD) ──────────────────────────
+    {
+        "name": "ai_team_list_integrations",
+        "description": "List all configured integrations (connectors) in the organization including custom MCP servers, GitHub, Slack, etc.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "ai_team_create_integration",
+        "description": "Create a new connector/integration. Supports custom-mcp, slack, sentry, github, gitlab, pagerduty, linear, and more.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "connector_type": {
+                    "type": "string",
+                    "description": "Connector type (e.g. 'custom-mcp', 'slack', 'sentry', 'github')",
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Unique integration name (e.g. 'my-custom-mcp')",
+                },
+                "display_name": {
+                    "type": "string",
+                    "description": "Human-readable display name (optional)",
+                },
+                "server_url": {
+                    "type": "string",
+                    "description": "MCP server URL (for custom-mcp type)",
+                },
+                "auth_type": {
+                    "type": "string",
+                    "enum": ["none", "token", "oAuth"],
+                    "description": "Authentication type (default: none)",
+                    "default": "none",
+                },
+                "token": {
+                    "type": "string",
+                    "description": "Bearer token (when auth_type is 'token')",
+                },
+            },
+            "required": ["connector_type", "name"],
+        },
+    },
+    {
+        "name": "ai_team_delete_integration",
+        "description": "Delete a connector/integration by name.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Integration name to delete",
+                },
+            },
+            "required": ["name"],
+        },
+    },
     # ── Agent Tools ─────────────────────────────────────────────
     {
         "name": "ai_team_get_agent_tools",
@@ -424,6 +484,20 @@ def tool_handler(tool_name: str, args: dict, client) -> dict:
         ),
         "ai_team_list_models": lambda: client.list_models(),
         "ai_team_list_connectors": lambda: client.list_connectors(),
+        "ai_team_list_integrations": lambda: client.list_integrations(),
+        "ai_team_create_integration": lambda: client.create_integration(
+            connector_type=args["connector_type"],
+            name=args["name"],
+            display_name=args.get("display_name", ""),
+            auth_data={
+                k: v for k, v in {
+                    "authType": args.get("auth_type", "none"),
+                    "serverUrl": args.get("server_url"),
+                    "token": args.get("token"),
+                }.items() if v is not None
+            },
+        ),
+        "ai_team_delete_integration": lambda: client.delete_integration(args["name"]),
         "ai_team_get_agent_tools": lambda: client.get_agent_tools(args["agent_id"]),
         "ai_team_clone_agent": lambda: client.clone_agent(
             args["agent_id"],

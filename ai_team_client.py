@@ -164,11 +164,46 @@ class AITeamClient:
         return resp.json()["data"]
 
     def update_agent(self, agent_id: str, **kwargs) -> dict:
-        """Update an existing agent. Pass any field to update."""
+        """Update an existing agent. Pass any field to update.
+
+        The API requires masterPrompt and userPrompt on every PUT,
+        so we fetch the current agent first and merge in the updates.
+        """
+        # Fetch current agent data (API requires all required fields on PUT)
+        current = self.get_agent(agent_id)
+
+        # Field mapping: kwargs use snake_case, API uses camelCase
+        field_map = {
+            "system_prompt": "masterPrompt",
+            "temperature": "modelTemperature",
+        }
+
+        payload = {
+            "masterPrompt": current.get("masterPrompt", ""),
+            "userPrompt": current.get("userPrompt", ""),
+            "name": current.get("name", ""),
+            "description": current.get("description", ""),
+            "model": current.get("model", ""),
+            "modelTemperature": current.get("modelTemperature", 0.1),
+            "status": current.get("status", "active"),
+            "priority": current.get("priority", 10),
+            "connectors": current.get("connectors", []),
+            "capabilities": current.get("capabilities", []),
+        }
+        if current.get("role"):
+            payload["role"] = current["role"]
+        if current.get("avatar"):
+            payload["avatar"] = current["avatar"]
+
+        # Apply updates, mapping snake_case to camelCase where needed
+        for key, value in kwargs.items():
+            api_key = field_map.get(key, key)
+            payload[api_key] = value
+
         resp = requests.put(
             self._agent_url(f"/agents/{agent_id}"),
             headers=self.headers,
-            json=kwargs,
+            json=payload,
         )
         resp.raise_for_status()
         return resp.json().get("data", {})
@@ -314,9 +349,28 @@ class AITeamClient:
     # ── Agent Tools ─────────────────────────────────────────
 
     def get_agent_tools(self, agent_id: str) -> list:
-        """Get the MCP tools assigned to a specific agent."""
+        """Get the MCP tools assigned to a specific agent.
+
+        Returns a flat list of tool dicts. The API may return toolConfigurations
+        as either a list or a dict keyed by connector name.
+        """
         agent = self.get_agent(agent_id)
-        return agent.get("toolConfigurations", [])
+        tool_configs = agent.get("toolConfigurations", [])
+
+        # If dict format (keyed by connector), flatten to list
+        if isinstance(tool_configs, dict):
+            tools = []
+            for connector_name, connector_data in tool_configs.items():
+                for cfg in connector_data.get("configurations", []):
+                    tools.append({
+                        "toolName": cfg.get("name", ""),
+                        "description": cfg.get("description", ""),
+                        "connector": connector_name,
+                        "status": cfg.get("status", "active"),
+                    })
+            return tools
+
+        return tool_configs
 
     def clone_agent(self, agent_id: str, new_name: str, **overrides) -> dict:
         """Clone an existing agent with a new name.

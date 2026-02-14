@@ -78,6 +78,19 @@ Body: {<fields to update>}
 Response: {"data": <updated_agent>}
 ```
 
+**Important**: The PUT endpoint requires `masterPrompt` and `userPrompt` in every
+request, even if you only want to change other fields. Fetch the agent first, merge
+your updates into the full payload, then PUT.
+
+```json
+// Correct: include masterPrompt + userPrompt with every update
+{
+    "masterPrompt": "<current prompt>",
+    "userPrompt": "<current user prompt>",
+    "connectors": ["edgedelta-mcp", "edgedelta-documentation", "github"]
+}
+```
+
 ### Delete Agent
 ```
 DELETE /agents/{agent_id}

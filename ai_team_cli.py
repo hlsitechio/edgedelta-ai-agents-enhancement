@@ -290,17 +290,19 @@ def cmd_update_agent(args):
     if args.model:
         updates["model"] = args.model
     if args.system_prompt:
-        updates["masterPrompt"] = args.system_prompt
+        updates["system_prompt"] = args.system_prompt
     if args.prompt_file:
         with open(args.prompt_file, "r") as f:
-            updates["masterPrompt"] = f.read()
+            updates["system_prompt"] = f.read()
     if args.temperature is not None:
-        updates["modelTemperature"] = args.temperature
+        updates["temperature"] = args.temperature
     if args.status:
         updates["status"] = args.status
+    if args.connectors:
+        updates["connectors"] = [c.strip() for c in args.connectors.split(",")]
 
     if not updates:
-        print("No updates specified. Use --name, --description, --model, --system-prompt, etc.")
+        print("No updates specified. Use --name, --description, --model, --system-prompt, --connectors, etc.")
         return
 
     result = client.update_agent(args.agent_id, **updates)
@@ -455,14 +457,22 @@ def cmd_agent_tools(args):
     """Show the MCP tools assigned to an agent."""
     client = get_client(args)
     tools = client.get_agent_tools(args.agent_id)
+
+    # Group by connector
+    by_connector = {}
+    for t in tools:
+        conn = t.get("connector", "unknown")
+        by_connector.setdefault(conn, []).append(t)
+
     print(f"\n{'='*80}")
     print(f"MCP Tools for agent {args.agent_id} ({len(tools)} tools)")
     print(f"{'='*80}")
-    for t in tools:
-        status = t.get("status", "unknown")
-        connector = t.get("connector", "unknown")
-        name = t.get("toolName", "unknown")
-        print(f"  [{status:<8}] {name:<35} connector: {connector}")
+    for connector, connector_tools in by_connector.items():
+        print(f"\n  [{connector}] ({len(connector_tools)} tools)")
+        for t in connector_tools:
+            status = t.get("status", "active")
+            name = t.get("toolName", "unknown")
+            print(f"    [{status:<8}] {name}")
     print()
 
 
@@ -592,6 +602,7 @@ def main():
     p_update.add_argument("--prompt-file", help="Read system prompt from file")
     p_update.add_argument("--temperature", type=float, help="New temperature")
     p_update.add_argument("--status", choices=["active", "inactive"], help="New status")
+    p_update.add_argument("--connectors", help="Comma-separated connector names (replaces current list)")
 
     # agent-tools
     p_agent_tools = subparsers.add_parser("agent-tools", help="Show MCP tools for an agent")

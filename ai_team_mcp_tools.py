@@ -105,6 +105,11 @@ AI_TEAM_TOOLS = [
                     "enum": ["active", "inactive"],
                     "description": "Agent status",
                 },
+                "connectors": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Replace connector list (e.g. ['edgedelta-mcp', 'edgedelta-documentation', 'github'])",
+                },
             },
             "required": ["agent_id"],
         },

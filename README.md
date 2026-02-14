@@ -180,11 +180,12 @@ response = client.chat(agent["id"], "Scan for threats in the last 24h")
 When creating an agent via the browser UI, you go through these steps:
 
 1. **Name & Description** — who is this agent
-2. **Avatar** — select or upload a profile picture
+2. **Avatar** — select or upload a profile picture to personalize the teammate account
 3. **Model** — pick the LLM (Claude, GPT, Mistral, Llama)
 4. **System Prompt** — write the agent's instructions
-5. **Connectors** — choose which tools the agent can access
-6. **Temperature & Priority** — tune behavior
+5. **Choose Connectors** — select which tool sets the agent can access
+6. **Connectors Configured** — the system automatically provisions all MCP tools from the selected connectors to the agent
+7. **Temperature & Priority** — tune behavior
 
 All of these are supported via the API:
 
@@ -202,14 +203,16 @@ agent = client.create_agent(
 )
 ```
 
-### Connectors
+### Connectors: Choose → Configured
 
-Connectors give agents access to tools. When you assign a connector, the agent automatically gets all the MCP tools from that connector.
+Connectors are tool sets. When you create an agent, you **choose connectors** — then the system **automatically configures** all the MCP tools from those connectors onto the agent. This is the same as the two-step flow in the browser UI.
+
+**Step 1: Choose Connectors**
 
 | Connector | What it provides |
 |-----------|-----------------|
 | `edgedelta-mcp` | All 22 EdgeDelta MCP tools (log search, metrics, traces, pipelines, dashboards) |
-| `edgedelta-documentation` | EdgeDelta docs search - the agent can look up how EdgeDelta works |
+| `edgedelta-documentation` | EdgeDelta docs search — the agent can look up how EdgeDelta works |
 
 ```python
 # Default: both connectors (recommended)
@@ -219,15 +222,40 @@ connectors=["edgedelta-mcp", "edgedelta-documentation"]
 connectors=["edgedelta-mcp"]
 
 # List all available connectors in your org
-connectors = client.list_connectors(api_token="your-token")
+available = client.list_connectors(api_token="your-token")
 ```
 
-After creating an agent, verify which tools it got:
+**Step 2: Connectors Configured**
+
+After creating the agent, the connectors are automatically configured. Each connector provisions its tools into the agent's `toolConfigurations` array. You can verify what got configured:
 
 ```python
 tools = client.get_agent_tools(agent["id"])
+print(f"{len(tools)} tools configured:")
 for t in tools:
-    print(f"  {t['toolName']} ({t['connector']}) - {t['status']}")
+    print(f"  {t['toolName']:<30} connector: {t['connector']:<25} status: {t['status']}")
+```
+
+Example output after selecting `edgedelta-mcp`:
+```
+22 tools configured:
+  get_log_search                 connector: edgedelta-mcp        status: active
+  get_metric_search              connector: edgedelta-mcp        status: active
+  get_trace_timeline             connector: edgedelta-mcp        status: active
+  get_pipelines                  connector: edgedelta-mcp        status: active
+  get_all_dashboards             connector: edgedelta-mcp        status: active
+  deploy_pipeline                connector: edgedelta-mcp        status: active
+  ...
+```
+
+**CLI:**
+```bash
+# Create agent with specific connectors
+python3 ai_team_cli.py create-agent "My Agent" \
+    --connectors "edgedelta-mcp,edgedelta-documentation"
+
+# Verify what tools got configured
+python3 ai_team_cli.py agent-tools <agent-id>
 ```
 
 ---

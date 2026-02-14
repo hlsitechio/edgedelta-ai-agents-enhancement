@@ -307,6 +307,49 @@ class AITeamClient:
         resp.raise_for_status()
         return resp.json()
 
+    # ── Agent Tools ─────────────────────────────────────────
+
+    def get_agent_tools(self, agent_id: str) -> list:
+        """Get the MCP tools assigned to a specific agent."""
+        agent = self.get_agent(agent_id)
+        return agent.get("toolConfigurations", [])
+
+    def clone_agent(self, agent_id: str, new_name: str, **overrides) -> dict:
+        """Clone an existing agent with a new name.
+
+        Copies all config (prompt, model, connectors, etc.) from the source
+        agent and creates a new one with the given name. Any field can be
+        overridden via keyword arguments.
+        """
+        source = self.get_agent(agent_id)
+        return self.create_agent(
+            name=new_name,
+            description=overrides.get("description", source.get("description", "")),
+            system_prompt=overrides.get("system_prompt", source.get("masterPrompt", "")),
+            model=overrides.get("model", source.get("model", "claude-opus-4-5-20250414")),
+            role=overrides.get("role", source.get("role", "")),
+            capabilities=overrides.get("capabilities", source.get("capabilities", [])),
+            connectors=overrides.get("connectors", source.get("connectors")),
+            temperature=overrides.get("temperature", source.get("modelTemperature", 0.1)),
+            priority=overrides.get("priority", source.get("priority", 10)),
+        )
+
+    def search_threads(self, lookback: str = "7d", state: str = None, limit: int = 50) -> list:
+        """Search threads across all channels.
+
+        Args:
+            lookback: Time window (e.g. "1h", "24h", "7d")
+            state: Filter by state ("investigating", "resolved", "done")
+            limit: Max results
+
+        Returns:
+            List of thread activity items across all channels.
+        """
+        activities = self.get_activity(limit=limit, lookback=lookback)
+        if state:
+            activities = [a for a in activities if a.get("state") == state]
+        return activities
+
     # ── High-Level Helpers ──────────────────────────────────
 
     def send_message_and_wait(

@@ -7,25 +7,28 @@ Usage:
     python3 ai_team_cli.py <command> [options]
 
 Commands:
-    agents          List all AI agents
-    agent <id>      Show agent details
-    create-agent    Create a custom AI agent
-    delete-agent    Delete a custom agent
-    update-agent    Update an agent's config
+    agents              List all AI agents
+    agent <id>          Show agent details
+    create-agent        Create a custom AI agent
+    delete-agent        Delete a custom agent
+    update-agent        Update an agent's config
+    agent-tools <id>    Show MCP tools assigned to an agent
+    clone-agent <id>    Clone an existing agent with a new name
 
-    channels        List all channels
-    channel <id>    Show channel details
+    channels            List all channels
+    channel <id>        Show channel details
 
-    chat <agent>    Send a message to an agent and wait for response
-    threads <ch>    List threads in a channel
-    thread <ch> <t> Show thread messages
-    activity        Show recent activity
+    chat <agent>        Send a message to an agent and wait for response
+    threads <ch>        List threads in a channel
+    thread <ch> <t>     Show thread messages
+    search-threads      Search threads across all channels
+    activity            Show recent activity
 
-    models          List available AI models
-    connectors      List available connectors
+    models              List available AI models
+    connectors          List available connectors
 
-    login           Login and get JWT
-    status          Check auth status
+    login               Login and get JWT
+    status              Check auth status
 
 Environment:
     ED_ORG_ID         Organization ID
@@ -447,6 +450,65 @@ def cmd_models(args):
     print()
 
 
+def cmd_agent_tools(args):
+    """Show the MCP tools assigned to an agent."""
+    client = get_client(args)
+    tools = client.get_agent_tools(args.agent_id)
+    print(f"\n{'='*80}")
+    print(f"MCP Tools for agent {args.agent_id} ({len(tools)} tools)")
+    print(f"{'='*80}")
+    for t in tools:
+        status = t.get("status", "unknown")
+        connector = t.get("connector", "unknown")
+        name = t.get("toolName", "unknown")
+        print(f"  [{status:<8}] {name:<35} connector: {connector}")
+    print()
+
+
+def cmd_clone_agent(args):
+    """Clone an existing agent."""
+    client = get_client(args)
+    overrides = {}
+    if args.description:
+        overrides["description"] = args.description
+    if args.system_prompt:
+        overrides["system_prompt"] = args.system_prompt
+    if args.model:
+        overrides["model"] = args.model
+    if args.temperature is not None:
+        overrides["temperature"] = args.temperature
+
+    print(f"Cloning agent {args.agent_id} as '{args.new_name}'...")
+    agent = client.clone_agent(args.agent_id, args.new_name, **overrides)
+    print(f"\nAgent cloned successfully!")
+    print(f"  ID:    {agent['id']}")
+    print(f"  Name:  {agent.get('name', args.new_name)}")
+    print(f"  Model: {agent.get('model', 'inherited')}")
+    print(f"  DM Channel: dm-{agent['id']}")
+
+
+def cmd_search_threads(args):
+    """Search threads across all channels."""
+    client = get_client(args)
+    results = client.search_threads(
+        lookback=args.lookback,
+        state=args.state,
+        limit=args.limit,
+    )
+    print(f"\n{'='*80}")
+    state_str = f", state={args.state}" if args.state else ""
+    print(f"Thread Search ({len(results)} results, lookback={args.lookback}{state_str})")
+    print(f"{'='*80}")
+    for r in results:
+        title = r.get("title", r.get("threadTitle", "untitled"))[:60]
+        channel = r.get("channelId", "unknown")
+        state = r.get("state", "")
+        updated = r.get("lastActivityAt", r.get("updatedAt", ""))[:19]
+        print(f"  [{state:<12}] {title}")
+        print(f"    channel: {channel}  updated: {updated}")
+        print()
+
+
 def cmd_connectors(args):
     """List available connectors."""
     creds = get_credentials(args)
@@ -529,6 +591,25 @@ def main():
     p_update.add_argument("--temperature", type=float, help="New temperature")
     p_update.add_argument("--status", choices=["active", "inactive"], help="New status")
 
+    # agent-tools
+    p_agent_tools = subparsers.add_parser("agent-tools", help="Show MCP tools for an agent")
+    p_agent_tools.add_argument("agent_id", help="Agent ID")
+
+    # clone-agent
+    p_clone = subparsers.add_parser("clone-agent", help="Clone an existing agent")
+    p_clone.add_argument("agent_id", help="Source agent ID to clone")
+    p_clone.add_argument("new_name", help="Name for the cloned agent")
+    p_clone.add_argument("--description", help="Override description")
+    p_clone.add_argument("--system-prompt", help="Override system prompt")
+    p_clone.add_argument("--model", help="Override model")
+    p_clone.add_argument("--temperature", type=float, help="Override temperature")
+
+    # search-threads
+    p_search = subparsers.add_parser("search-threads", help="Search threads across all channels")
+    p_search.add_argument("--lookback", default="7d", help="Time window (e.g. 1h, 24h, 7d)")
+    p_search.add_argument("--state", choices=["investigating", "resolved", "done"], help="Filter by state")
+    p_search.add_argument("--limit", type=int, default=50, help="Max results")
+
     # channels
     subparsers.add_parser("channels", help="List all channels")
 
@@ -586,6 +667,9 @@ def main():
         "activity": cmd_activity,
         "models": cmd_models,
         "connectors": cmd_connectors,
+        "agent-tools": cmd_agent_tools,
+        "clone-agent": cmd_clone_agent,
+        "search-threads": cmd_search_threads,
     }
 
     cmd_func = commands.get(args.command)

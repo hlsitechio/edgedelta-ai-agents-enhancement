@@ -7,8 +7,8 @@ These tool definitions can be added to the edgedelta-mcp-server to provide
 AI Team agent management, chat, and monitoring capabilities.
 
 Tool Categories:
-    - Agent Management: create, list, get, update, delete agents
-    - Chat: send messages, get responses, manage threads
+    - Agent Management: create, list, get, update, delete, clone agents, get agent tools
+    - Chat: send messages, get responses, manage threads, search threads
     - Channels: list channels, get channel info
     - Activity: monitor agent activity, badge counts
     - Models: list available AI models
@@ -287,6 +287,68 @@ AI_TEAM_TOOLS = [
             "required": [],
         },
     },
+    # ── Agent Tools ─────────────────────────────────────────────
+    {
+        "name": "ai_team_get_agent_tools",
+        "description": "Get the MCP tools assigned to a specific agent. Returns the tool configurations including tool name, connector, and status.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "agent_id": {
+                    "type": "string",
+                    "description": "Agent ID to get tools for",
+                },
+            },
+            "required": ["agent_id"],
+        },
+    },
+    {
+        "name": "ai_team_clone_agent",
+        "description": "Clone an existing agent with a new name. Copies all configuration (prompt, model, connectors, temperature, etc.) from the source agent. Any field can be overridden.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "agent_id": {
+                    "type": "string",
+                    "description": "Source agent ID to clone from",
+                },
+                "new_name": {
+                    "type": "string",
+                    "description": "Name for the cloned agent",
+                },
+                "description": {"type": "string", "description": "Override description (optional)"},
+                "system_prompt": {"type": "string", "description": "Override system prompt (optional)"},
+                "model": {"type": "string", "description": "Override model (optional)"},
+                "temperature": {"type": "number", "description": "Override temperature (optional)"},
+            },
+            "required": ["agent_id", "new_name"],
+        },
+    },
+    {
+        "name": "ai_team_search_threads",
+        "description": "Search threads across all channels. Filter by time window and thread state (investigating, resolved, done).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "lookback": {
+                    "type": "string",
+                    "description": "Time window (e.g. '1h', '24h', '7d'). Default: '7d'",
+                    "default": "7d",
+                },
+                "state": {
+                    "type": "string",
+                    "enum": ["investigating", "resolved", "done"],
+                    "description": "Filter by thread state (optional)",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max results (default: 50)",
+                    "default": 50,
+                },
+            },
+            "required": [],
+        },
+    },
 ]
 
 
@@ -352,6 +414,17 @@ def tool_handler(tool_name: str, args: dict, client) -> dict:
         ),
         "ai_team_list_models": lambda: client.list_models(),
         "ai_team_list_connectors": lambda: client.list_connectors(),
+        "ai_team_get_agent_tools": lambda: client.get_agent_tools(args["agent_id"]),
+        "ai_team_clone_agent": lambda: client.clone_agent(
+            args["agent_id"],
+            args["new_name"],
+            **{k: v for k, v in args.items() if k not in ("agent_id", "new_name") and v is not None},
+        ),
+        "ai_team_search_threads": lambda: client.search_threads(
+            lookback=args.get("lookback", "7d"),
+            state=args.get("state"),
+            limit=args.get("limit", 50),
+        ),
     }
 
     handler = handlers.get(tool_name)

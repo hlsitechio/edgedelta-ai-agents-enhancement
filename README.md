@@ -1,6 +1,6 @@
 # Edge Delta AI Agents Enhancement
 
-Adds **17 new MCP tools** to the [EdgeDelta MCP Server](https://github.com/edgedelta/edgedelta-mcp-server) for AI Team agent management, chat, and activity monitoring.
+Adds **20 new MCP tools** to the [EdgeDelta MCP Server](https://github.com/edgedelta/edgedelta-mcp-server) for AI Team agent management, chat, and activity monitoring.
 
 The official MCP server has 22 tools for observability data (logs, metrics, traces, pipelines, dashboards). This enhancement extends it with full programmatic access to Edge Delta's **AI Team** system - the agents, the chat, the channels - everything that was previously only available through the browser UI.
 
@@ -10,7 +10,7 @@ The official MCP server has 22 tools for observability data (logs, metrics, trac
 
 | Capability | Before | After |
 |---|---|---|
-| Total MCP tools | 22 | **39** |
+| Total MCP tools | 22 | **42** |
 | Create AI agents | Browser UI only (15 steps) | **1 API call** |
 | Chat with agents | Browser UI only | **1 API call** |
 | List/manage agents | Browser UI only | **Programmatic** |
@@ -21,7 +21,7 @@ The official MCP server has 22 tools for observability data (logs, metrics, trac
 
 ---
 
-## The 17 New Tools
+## The 20 New Tools
 
 ### Agent Management
 | Tool | What it does |
@@ -31,6 +31,8 @@ The official MCP server has 22 tools for observability data (logs, metrics, trac
 | `create_agent` | Create a custom AI agent with any model, prompt, and connectors |
 | `update_agent` | Update agent name, prompt, model, temperature, status |
 | `delete_agent` | Delete a custom agent |
+| `get_agent_tools` | List the MCP tools assigned to a specific agent |
+| `clone_agent` | Duplicate an existing agent with a new name and optional overrides |
 
 ### Chat
 | Tool | What it does |
@@ -41,6 +43,7 @@ The official MCP server has 22 tools for observability data (logs, metrics, trac
 | `get_thread_messages` | Get just the messages from a thread |
 | `get_threads` | List recent threads in a channel |
 | `mark_thread_read` | Mark a thread as read |
+| `search_threads` | Search threads across all channels by time window and state |
 
 ### Channels & Activity
 | Tool | What it does |
@@ -177,8 +180,8 @@ response = client.chat(agent["id"], "Scan for threats in the last 24h")
 | File | What |
 |---|---|
 | `ai_team_client.py` | Core Python client - all API calls |
-| `ai_team_cli.py` | CLI tool - 15 commands |
-| `ai_team_mcp_tools.py` | 17 MCP tool definitions + handler |
+| `ai_team_cli.py` | CLI tool - 18 commands |
+| `ai_team_mcp_tools.py` | 20 MCP tool definitions + handler |
 | `test_ai_team.py` | Test suite - 16 automated tests |
 | `agent_prompts.py` | 6 ready-to-deploy agent templates |
 | `quick_start.py` | End-to-end demo script |

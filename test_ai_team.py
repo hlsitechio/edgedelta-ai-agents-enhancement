@@ -136,6 +136,7 @@ def run_tests(org_id: str, jwt: str, api_token: str = None):
     )
 
     test_agent_id = None
+    cloned_agent_id = None
     if test_agent:
         test_agent_id = test_agent["id"]
         print(f"    Created agent: {test_agent_id}")
@@ -147,6 +148,27 @@ def run_tests(org_id: str, jwt: str, api_token: str = None):
             test_agent_id,
             description="Updated test description",
         )
+
+        # Get agent tools
+        tools = runner.test(
+            "Get agent tools",
+            client.get_agent_tools,
+            test_agent_id,
+        )
+        if tools is not None:
+            print(f"    Found {len(tools)} tool configurations")
+
+        # Clone agent
+        cloned = runner.test(
+            "Clone agent",
+            client.clone_agent,
+            test_agent_id,
+            "Cloned Test Agent (auto-cleanup)",
+        )
+        cloned_agent_id = None
+        if cloned:
+            cloned_agent_id = cloned["id"]
+            print(f"    Cloned as: {cloned_agent_id}")
 
     # ── Chat API Tests ───────────────────────────────────────
     print(f"\n--- Chat API (chat.ai.edgedelta.com) ---")
@@ -186,6 +208,17 @@ def run_tests(org_id: str, jwt: str, api_token: str = None):
     activity = runner.test("Get activity", client.get_activity, 5, "7d")
     if activity:
         print(f"    Found {len(activity)} activity items")
+
+    # Search threads
+    search_results = runner.test(
+        "Search threads",
+        client.search_threads,
+        "7d",
+        None,
+        10,
+    )
+    if search_results is not None:
+        print(f"    Found {len(search_results)} threads")
 
     badge = runner.test("Get badge count", client.get_badge_count)
     if badge:
@@ -271,6 +304,17 @@ def run_tests(org_id: str, jwt: str, api_token: str = None):
             print(f"    Cleaned up agent {test_agent_id}")
     else:
         runner.skip("Delete test agent", "No test agent to clean up")
+
+    if cloned_agent_id:
+        deleted = runner.test(
+            "Delete cloned agent",
+            client.delete_agent,
+            cloned_agent_id,
+        )
+        if deleted:
+            print(f"    Cleaned up cloned agent {cloned_agent_id}")
+    else:
+        runner.skip("Delete cloned agent", "No cloned agent to clean up")
 
     # ── Report ───────────────────────────────────────────────
     success = runner.report()

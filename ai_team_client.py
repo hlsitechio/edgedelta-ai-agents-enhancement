@@ -118,6 +118,7 @@ class AITeamClient:
         connectors: list = None,
         temperature: float = 0.1,
         priority: int = 10,
+        avatar: str = "",
     ) -> dict:
         """Create a new AI teammate/agent.
 
@@ -131,6 +132,7 @@ class AITeamClient:
             connectors: List of connector names (edgedelta-mcp, github, etc.)
             temperature: Model temperature (0.0-1.0)
             priority: Agent priority (1-10)
+            avatar: Avatar URL or identifier for the agent's profile picture
 
         Returns:
             Created agent dict with id, status, toolConfigurations, etc.
@@ -150,6 +152,8 @@ class AITeamClient:
         }
         if role:
             payload["role"] = role
+        if avatar:
+            payload["avatar"] = avatar
 
         resp = requests.post(
             self._agent_url("/agents"),

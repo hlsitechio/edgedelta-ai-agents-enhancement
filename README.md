@@ -175,6 +175,63 @@ response = client.chat(agent["id"], "Scan for threats in the last 24h")
 
 ---
 
+## Full Agent Creation Workflow
+
+When creating an agent via the browser UI, you go through these steps:
+
+1. **Name & Description** — who is this agent
+2. **Avatar** — select or upload a profile picture
+3. **Model** — pick the LLM (Claude, GPT, Mistral, Llama)
+4. **System Prompt** — write the agent's instructions
+5. **Connectors** — choose which tools the agent can access
+6. **Temperature & Priority** — tune behavior
+
+All of these are supported via the API:
+
+```python
+agent = client.create_agent(
+    name="Security Recon",
+    description="Threat analysis using observability data",
+    avatar="https://example.com/avatar.png",       # profile picture
+    model="claude-opus-4-5-20250414",               # LLM model
+    system_prompt="You are a security specialist...", # instructions
+    connectors=["edgedelta-mcp", "edgedelta-documentation"],  # tools
+    temperature=0.1,                                 # creativity (0.0-1.0)
+    priority=10,                                     # agent priority (1-10)
+    role="Security Reconnaissance Specialist",       # role title
+)
+```
+
+### Connectors
+
+Connectors give agents access to tools. When you assign a connector, the agent automatically gets all the MCP tools from that connector.
+
+| Connector | What it provides |
+|-----------|-----------------|
+| `edgedelta-mcp` | All 22 EdgeDelta MCP tools (log search, metrics, traces, pipelines, dashboards) |
+| `edgedelta-documentation` | EdgeDelta docs search - the agent can look up how EdgeDelta works |
+
+```python
+# Default: both connectors (recommended)
+connectors=["edgedelta-mcp", "edgedelta-documentation"]
+
+# MCP tools only (no docs search)
+connectors=["edgedelta-mcp"]
+
+# List all available connectors in your org
+connectors = client.list_connectors(api_token="your-token")
+```
+
+After creating an agent, verify which tools it got:
+
+```python
+tools = client.get_agent_tools(agent["id"])
+for t in tools:
+    print(f"  {t['toolName']} ({t['connector']}) - {t['status']}")
+```
+
+---
+
 ## Files
 
 | File | What |

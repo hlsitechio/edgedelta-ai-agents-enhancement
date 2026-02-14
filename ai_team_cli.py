@@ -257,6 +257,7 @@ def cmd_create_agent(args):
         connectors=connectors,
         temperature=args.temperature,
         priority=args.priority,
+        avatar=args.avatar,
     )
     print(f"\nAgent created successfully!")
     print(f"  ID:    {agent['id']}")
@@ -574,6 +575,7 @@ def main():
     p_create.add_argument("--connectors", help="Comma-separated connector names")
     p_create.add_argument("--temperature", type=float, default=0.1, help="Model temperature")
     p_create.add_argument("--priority", type=int, default=10, help="Agent priority")
+    p_create.add_argument("--avatar", default="", help="Avatar URL or identifier")
 
     # delete-agent
     p_delete = subparsers.add_parser("delete-agent", help="Delete a custom agent")

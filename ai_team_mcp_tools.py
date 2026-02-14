@@ -77,6 +77,10 @@ AI_TEAM_TOOLS = [
                     "description": "Model temperature 0.0-1.0 (default: 0.1)",
                     "default": 0.1,
                 },
+                "avatar": {
+                    "type": "string",
+                    "description": "Avatar URL or identifier for the agent's profile picture (optional)",
+                },
             },
             "required": ["name", "description", "system_prompt"],
         },
@@ -375,6 +379,7 @@ def tool_handler(tool_name: str, args: dict, client) -> dict:
             role=args.get("role", ""),
             connectors=args.get("connectors"),
             temperature=args.get("temperature", 0.1),
+            avatar=args.get("avatar", ""),
         ),
         "ai_team_update_agent": lambda: client.update_agent(
             args["agent_id"],

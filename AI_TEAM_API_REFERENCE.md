@@ -113,15 +113,25 @@ Response: 200 or 204
 }
 ```
 
-### Known Models
-- `claude-opus-4-5-20250414` (Claude Opus 4.5)
-- `gpt-5.2` (GPT-5.2)
-- `mistral-large-latest` (Mistral Large)
-- `llama-3-70b` (Llama 3 70B)
+### Known Models (25+)
+
+**Anthropic:**
+- Claude Haiku 3.5, Sonnet 4, Sonnet 4.5, Opus 4, Opus 4.1, Opus 4.5, Opus 4.6
+
+**OpenAI:**
+- GPT-o3, GPT-4o, GPT-4o mini, GPT-4 Turbo, GPT-4.1
+- GPT-5, GPT-5 mini, GPT-5 nano, GPT-5 Codex
+- GPT-5.1, GPT-5.1 Codex, GPT-5.1 Codex mini, GPT-5.2
+
+**Google:**
+- Gemini 2.0 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 3 Pro, Gemini 3 Flash
 
 ### Known Connectors
 - `edgedelta-mcp` - EdgeDelta MCP tools (log search, metrics, pipelines, etc.)
 - `edgedelta-documentation` - EdgeDelta docs search
+- `github` - GitHub repository monitoring and code changes
+- Custom MCP connectors (any remote MCP server URL)
+- File connectors (local file path monitoring with wildcards)
 
 ## Chat API
 

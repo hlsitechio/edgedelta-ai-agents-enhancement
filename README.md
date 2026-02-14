@@ -213,6 +213,28 @@ Connectors are tool sets. When you create an agent, you **choose connectors** �
 |-----------|-----------------|
 | `edgedelta-mcp` | All 22 EdgeDelta MCP tools (log search, metrics, traces, pipelines, dashboards) |
 | `edgedelta-documentation` | EdgeDelta docs search — the agent can look up how EdgeDelta works |
+| `github` | Connect your repositories to monitor code changes |
+| **Custom MCP** | Connect ANY remote MCP server (see below) |
+
+### Custom Connectors
+
+You can create custom connectors via **AI Team → Connectors → Add Connector**. Multiple types are available:
+
+**MCP Connector** — connect to any remote MCP server:
+- **Display Name** — name for the connector (e.g. `custom-mcp`)
+- **Server URL** — URL of the remote MCP server
+- **Authentication Type** — None, or select an auth method
+- **Advanced Settings** — additional configuration
+
+**File Connector** — monitor log files:
+- **Connector Name** — name for the connector
+- **Path** — full path with wildcards (e.g. `path/to/your/log/files/*.log`)
+- **File Exclude** — patterns to exclude (supports regex)
+- **Target Environments** — deploy to specific environments
+
+**GitHub Connector** — connect repositories to monitor code changes
+
+Once created, custom connectors appear in the connector list and can be assigned to any agent. This lets agents use tools beyond EdgeDelta — GitHub, Slack, custom internal tools, anything with an MCP server.
 
 ```python
 # Default: both connectors (recommended)
@@ -364,12 +386,13 @@ See `agent_prompts.py` for 6 complete, ready-to-deploy prompt templates.
 
 Edge Delta supports multiple LLM providers. Pick based on your use case:
 
-| Model | Best For | Speed | Cost |
-|-------|----------|-------|------|
-| `claude-opus-4-5-20250414` | Complex analysis, security, reasoning | Slower | Higher |
-| `gpt-5.2` | General purpose, fast triage, routing | Fast | Medium |
-| `mistral-large-latest` | EU data residency, multilingual | Fast | Lower |
-| `llama-3-70b` | Self-hosted, privacy-sensitive workloads | Fast | Lowest |
+Edge Delta supports **25+ models** across 3 providers:
+
+| Provider | Models |
+|----------|--------|
+| **Anthropic** | Claude Haiku 3.5, Sonnet 4, Sonnet 4.5, Opus 4, Opus 4.1, Opus 4.5, Opus 4.6 |
+| **OpenAI** | GPT-o3, GPT-4o, GPT-4o mini, GPT-4 Turbo, GPT-4.1, GPT-5, GPT-5 mini, GPT-5 nano, GPT-5 Codex, GPT-5.1, GPT-5.1 Codex, GPT-5.1 Codex mini, GPT-5.2 |
+| **Google** | Gemini 2.0 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 3 Pro, Gemini 3 Flash |
 
 ```python
 # List all available models in your org
@@ -377,9 +400,10 @@ models = client.list_models(api_token="your-api-token")
 ```
 
 **Rules of thumb:**
-- **Security analysis, incident response** → Claude Opus 4.5 (best reasoning)
-- **Triage, routing, quick answers** → GPT-5.2 (fast, good enough)
-- **Cost-sensitive batch operations** → Mistral or Llama
+- **Security analysis, incident response** → Claude Opus 4.5/4.6 (best reasoning)
+- **Triage, routing, quick answers** → GPT-5.2 or Gemini 3 Flash (fast)
+- **Code generation** → GPT-5 Codex or GPT-5.1 Codex
+- **Cost-sensitive batch operations** → Claude Haiku 3.5, GPT-4o mini, GPT-5 mini/nano, Gemini Flash
 - **Temperature**: Keep at `0.1` for factual analysis, use `0.2-0.3` for creative tasks
 
 ---

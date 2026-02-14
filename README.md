@@ -209,32 +209,65 @@ Connectors are tool sets. When you create an agent, you **choose connectors** �
 
 **Step 1: Choose Connectors**
 
+**15 MCP connectors** available for AI agents:
+
 | Connector | What it provides |
 |-----------|-----------------|
 | `edgedelta-mcp` | All 22 EdgeDelta MCP tools (log search, metrics, traces, pipelines, dashboards) |
-| `edgedelta-documentation` | EdgeDelta docs search — the agent can look up how EdgeDelta works |
-| `github` | Connect your repositories to monitor code changes |
-| **Custom MCP** | Connect ANY remote MCP server (see below) |
+| `edgedelta-documentation` | EdgeDelta docs search |
+| `github` | GitHub repositories, code changes |
+| `gitlab` | GitLab repositories |
+| `slack` | Slack messaging |
+| `microsoft-teams` | Microsoft Teams |
+| `atlassian` | Jira + Confluence |
+| `pagerduty` | PagerDuty incidents |
+| `sentry` | Sentry error tracking |
+| `linear` | Linear project management |
+| `aws` | AWS services |
+| `databricks` | Databricks |
+| `elastic-mcp` | Elastic MCP |
+| `circleci` | CircleCI pipelines |
+| `jenkins` | Jenkins CI/CD |
+| `custom-mcp` | **Any remote MCP server** (see below) |
+
+Plus **31 more connector types** for data ingestion (file, kafka, syslog, kubernetes, docker, S3, OTLP, etc.) — 46 total.
 
 ### Custom Connectors
 
 You can create custom connectors via **AI Team → Connectors → Add Connector**. Multiple types are available:
 
-**MCP Connector** — connect to any remote MCP server:
-- **Display Name** — name for the connector (e.g. `custom-mcp`)
-- **Server URL** — URL of the remote MCP server
-- **Authentication Type** — None, or select an auth method
-- **Advanced Settings** — additional configuration
+**Custom MCP Connector** (`custom-mcp`) — connect to any remote MCP server:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| Server URL | Yes | URL of the remote MCP server |
+| Auth Type | Yes | `none`, `token` (Bearer), or `oAuth` |
+| Token | If token auth | Bearer token for Authorization header |
+| OAuth Client ID | If oAuth | OAuth Client ID |
+| OAuth Client Secret | If oAuth | OAuth Client Secret |
+| Additional Headers | No | Custom headers (advanced) |
 
 **File Connector** — monitor log files:
-- **Connector Name** — name for the connector
 - **Path** — full path with wildcards (e.g. `path/to/your/log/files/*.log`)
 - **File Exclude** — patterns to exclude (supports regex)
 - **Target Environments** — deploy to specific environments
 
-**GitHub Connector** — connect repositories to monitor code changes
+**Pre-built Connectors** — GitHub, Slack, PagerDuty, Sentry, etc. each have their own configuration flow.
 
-Once created, custom connectors appear in the connector list and can be assigned to any agent. This lets agents use tools beyond EdgeDelta — GitHub, Slack, custom internal tools, anything with an MCP server.
+Once created, connectors appear in the connector list and can be assigned to any agent.
+
+### Connector API
+
+```
+# List connector specs (all 46 types with config schemas)
+GET /v1/orgs/{org_id}/ai/connectors/specs
+
+# List configured connectors
+GET /v1/orgs/{org_id}/ai/connectors
+
+# List available environments
+GET /v1/orgs/{org_id}/ai/connectors/environments
+```
 
 ```python
 # Default: both connectors (recommended)
